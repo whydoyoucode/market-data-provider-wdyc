@@ -1,0 +1,129 @@
+{
+	"info": {
+		"_postman_id": "43f48486-8e1a-4364-9825-25265316acea",
+		"name": "Market Data Provider WDYC",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "15977394"
+	},
+	"item": [
+		{
+			"name": "subscribe_update",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:3000/stream/candlestick/subscribe?eventState=updated&subscriberId=123",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"stream",
+						"candlestick",
+						"subscribe"
+					],
+					"query": [
+						{
+							"key": "eventState",
+							"value": "updated"
+						},
+						{
+							"key": "subscriberId",
+							"value": "123"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "subscribe_update Copy",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:3000/stream/candlestick/subscribe?eventState=updated&subscriberId=234",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"stream",
+						"candlestick",
+						"subscribe"
+					],
+					"query": [
+						{
+							"key": "eventState",
+							"value": "updated"
+						},
+						{
+							"key": "subscriberId",
+							"value": "234"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "subscribe_close",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:3000/stream/candlestick/subscribe?eventState=closed&subscriberId=123",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"stream",
+						"candlestick",
+						"subscribe"
+					],
+					"query": [
+						{
+							"key": "eventState",
+							"value": "closed"
+						},
+						{
+							"key": "subscriberId",
+							"value": "123"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "subscribe",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"symbol\": \"BTCUSDT\",\n    \"timeframe\": \"1m\",\n    \"state\": \"updated\",\n    \"subscriberId\": \"123\",\n    \"exchange\": \"binance\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:3000/stream/candlestick/subscribe",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"stream",
+						"candlestick",
+						"subscribe"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

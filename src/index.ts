@@ -1,23 +1,57 @@
 import BinanceWebsocketService from './service/binanceWebsocketService'
-
-const timeout = (ms: number): Promise<void> => {
-    return new Promise((res, rej) => {
-        setTimeout(() => {
-            res()
-        }, ms)
-    })
-}
+import events from 'events'
+import express, { Express, Request, Response } from 'express'
+import cors from 'cors'
+import EventDispatcher from './service/eventDispatcher'
 
 const start = async () => {
-    const binanceWebsocketService: BinanceWebsocketService = new BinanceWebsocketService()
-
+    const emitter = new events.EventEmitter()
+    const eventDispatcher = new EventDispatcher(emitter)
+    const binanceWebsocketService: BinanceWebsocketService = new BinanceWebsocketService(eventDispatcher)
     await binanceWebsocketService.connect()
-    binanceWebsocketService.subscribeToKlineStream('btcusdt', '5m')
-    binanceWebsocketService.subscribeToKlineStream('ethusdt', '1m')
-    await timeout(5000)
-    binanceWebsocketService.unsubscribeFromKlineStream('btcusdt', '5m')
-    await timeout(3000)
-    binanceWebsocketService.unsubscribeFromKlineStream('ethusdt', '1m')
+
+    const app: Express = express()
+    const defaultPort = 3000
+    app.use(cors())
+    app.use(express.json())
+
+    app.get('/stream/candlestick/subscribe', (req: Request, res: Response) => {
+        res.writeHead(200, {
+            Connection: 'keep-alive',
+            'Content-Type': 'text/event-stream',
+            'Cache-control': 'no-cache',
+        })
+
+        const eventState = req.query['eventState']
+        const subscriberId = req.query['subscriberId']
+
+        emitter.on(`candlestick_${eventState}_${subscriberId}`, message => {
+            res.write(`data: ${JSON.stringify(message)} '\n\n`)
+        })
+    })
+
+    app.post('/stream/candlestick/subscribe', async (req: Request, res: Response) => {
+        const symbol = req.body['symbol']
+        const timeframe = req.body['timeframe']
+        const exchange = req.body['exchange']
+        const state = req.body['state']
+        const subscriberId = req.body['subscriberId']
+
+        binanceWebsocketService.subscribeToKlineStream(symbol, timeframe)
+
+        eventDispatcher.subscribe(subscriberId, {
+            symbol,
+            timeframe,
+            exchange,
+            state,
+        })
+
+        res.sendStatus(200)
+    })
+
+    app.listen(defaultPort, () => {
+        console.log(`Server is running at http://localhost:${defaultPort}`)
+    })
 }
 
 start()

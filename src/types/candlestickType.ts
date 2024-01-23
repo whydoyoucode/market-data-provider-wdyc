@@ -10,3 +10,12 @@ export type Candlestick = {
     closeTime: number
     isClosed: boolean
 }
+
+export type CandlestickEventState = 'closed' | 'updated'
+
+export type CandlestickEventType = {
+    symbol: string
+    timeframe: string
+    exchange: string
+    state: CandlestickEventState
+}
