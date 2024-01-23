@@ -2,6 +2,7 @@ import { ErrorEvent, WebSocket } from 'ws'
 import { RawBinanceStreamCandlestick } from '../types/binanceType'
 import { Candlestick } from '../types/candlestickType'
 import { mapRawBinanceStreamCandlestickToCandlestick } from '../mappers/binanceMappers'
+import EventDispatcher from './eventDispatcher'
 
 class BinanceWebsocketService {
     private static BINANCE_FEATURES_WS_STREAM_URL = 'wss://fstream.binance.com'
@@ -10,9 +11,18 @@ class BinanceWebsocketService {
     protected connectionCheckInterval: number
     protected websocketClient: WebSocket | undefined
 
-    constructor(maxConnectionCheckAttempts: number = 20, connectionCheckInterval: number = 200) {
+    private eventDispatcher: EventDispatcher
+
+    constructor(
+        eventDispatcher: EventDispatcher,
+        maxConnectionCheckAttempts: number = 20,
+        connectionCheckInterval: number = 200,
+    ) {
         this.maxConnectionCheckAttempts = maxConnectionCheckAttempts
         this.connectionCheckInterval = connectionCheckInterval
+        this.eventDispatcher = eventDispatcher
+
+        this.onMessageHandler = this.onMessageHandler.bind(this)
     }
 
     public async connect(): Promise<void> {
@@ -27,11 +37,20 @@ class BinanceWebsocketService {
     }
 
     public subscribeToKlineStream(symbol: string, timeframe: string): void {
-        this.websocketClient?.send(this.subscriptionTemplate('SUBSCRIBE', symbol, 'kline', timeframe))
+        this.isConnectionEstablished() &&
+            this.websocketClient?.send(this.subscriptionTemplate('SUBSCRIBE', symbol, 'kline', timeframe))
     }
 
     public unsubscribeFromKlineStream(symbol: string, timeframe: string): void {
-        this.websocketClient?.send(this.subscriptionTemplate('UNSUBSCRIBE', symbol, 'kline', timeframe))
+        this.isConnectionEstablished() &&
+            this.websocketClient?.send(this.subscriptionTemplate('UNSUBSCRIBE', symbol, 'kline', timeframe))
+    }
+
+    private isConnectionEstablished(): boolean {
+        if (!this.websocketClient || this.websocketClient.readyState !== this.websocketClient.OPEN) {
+            throw Error('Connection is not established, please call connect method first')
+        }
+        return true
     }
 
     protected onOpenHandler(): void {
@@ -49,10 +68,15 @@ class BinanceWebsocketService {
     protected onMessageHandler(rawData: string): void {
         const parsedData = JSON.parse(rawData)
 
-        if (parsedData.k) {
+        if (parsedData.e === 'kline') {
             const rawCandlestick = parsedData as RawBinanceStreamCandlestick
             const candlestick: Candlestick = mapRawBinanceStreamCandlestickToCandlestick(rawCandlestick)
-            console.log(candlestick)
+
+            if (candlestick.isClosed) {
+                console.log('CLOSED')
+                this.eventDispatcher.notify(candlestick, 'closed')
+            }
+            this.eventDispatcher.notify(candlestick, 'updated')
         }
     }
 
@@ -60,9 +84,9 @@ class BinanceWebsocketService {
         return `{
             "method": "${method}",
             "params": [
-                "${symbol}@${stream}${timeframe ? '_' + timeframe : ''}"
+                "${symbol.toLowerCase()}@${stream}${timeframe ? '_' + timeframe : ''}"
             ],
-            "id": 1
+            "id": ${Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)}
         }`
     }
 
