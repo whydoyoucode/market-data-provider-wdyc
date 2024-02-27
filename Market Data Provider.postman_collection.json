@@ -124,6 +124,41 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "Get Candlesticks Limited",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/data/candlestick/limited?symbol=BTCUSDT&timeframe=4h&amount=100",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"data",
+						"candlestick",
+						"limited"
+					],
+					"query": [
+						{
+							"key": "symbol",
+							"value": "BTCUSDT"
+						},
+						{
+							"key": "timeframe",
+							"value": "4h"
+						},
+						{
+							"key": "amount",
+							"value": "100"
+						}
+					]
+				}
+			},
+			"response": []
 		}
 	]
 }
