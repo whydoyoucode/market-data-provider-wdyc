@@ -1,4 +1,4 @@
-import { ErrorEvent, WebSocket } from 'ws'
+import { ErrorEvent, MessageEvent, WebSocket } from 'ws'
 import { RawBinanceStreamCandlestick } from '../types/binanceType'
 import { Candlestick } from '../types/candlestickType'
 import { mapRawBinanceStreamCandlestickToCandlestick } from '../mappers/binanceMappers'
@@ -80,8 +80,8 @@ class BinanceWebsocketService {
         console.log(`Error occured, error: ${error.error}, message: ${error.message}`)
     }
 
-    protected onMessageHandler(rawData: string): void {
-        const parsedData = JSON.parse(rawData)
+    protected onMessageHandler(message: MessageEvent): void {
+        const parsedData = JSON.parse(message.data.toString())
 
         if (parsedData.e === 'kline') {
             const rawCandlestick = parsedData as RawBinanceStreamCandlestick
