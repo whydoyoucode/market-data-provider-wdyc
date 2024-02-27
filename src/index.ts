@@ -15,7 +15,7 @@ const start = async () => {
     const binanceRestApiService: BinanceRestApiService = new BinanceRestApiService()
 
     const app: Express = express()
-    const defaultPort = 3000
+    const defaultPort = process.env.PORT || 3000
     app.use(cors())
     app.use(express.json())
 
