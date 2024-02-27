@@ -3,13 +3,14 @@ import { RawBinanceStreamCandlestick } from '../types/binanceType'
 import { Candlestick } from '../types/candlestickType'
 import { mapRawBinanceStreamCandlestickToCandlestick } from '../mappers/binanceMappers'
 import EventDispatcher from './eventDispatcher'
+import ReconnectingWebSocket, { CloseEvent, Options } from 'reconnecting-websocket'
 
 class BinanceWebsocketService {
     private static BINANCE_FEATURES_WS_STREAM_URL = 'wss://fstream.binance.com'
 
     protected maxConnectionCheckAttempts: number
     protected connectionCheckInterval: number
-    protected websocketClient: WebSocket | undefined
+    protected websocketClient: ReconnectingWebSocket
 
     private eventDispatcher: EventDispatcher
 
@@ -22,16 +23,30 @@ class BinanceWebsocketService {
         this.connectionCheckInterval = connectionCheckInterval
         this.eventDispatcher = eventDispatcher
 
+        const options: Options = {
+            WebSocket: WebSocket,
+            minReconnectionDelay: 1000,
+            maxRetries: 10,
+            startClosed: true,
+            debug: false,
+        }
+
+        this.websocketClient = new ReconnectingWebSocket(
+            `${BinanceWebsocketService.BINANCE_FEATURES_WS_STREAM_URL}/ws`,
+            [],
+            options,
+        )
+
         this.onMessageHandler = this.onMessageHandler.bind(this)
     }
 
     public async connect(): Promise<void> {
-        this.websocketClient = new WebSocket(`${BinanceWebsocketService.BINANCE_FEATURES_WS_STREAM_URL}/ws`)
+        this.websocketClient.reconnect()
 
-        this.websocketClient.on('open', this.onOpenHandler)
-        this.websocketClient.on('close', this.onCloseHandler)
-        this.websocketClient.on('error', this.onErrorHandler)
-        this.websocketClient.on('message', this.onMessageHandler)
+        this.websocketClient.addEventListener('open', this.onOpenHandler)
+        this.websocketClient.addEventListener('close', this.onCloseHandler)
+        this.websocketClient.addEventListener('error', this.onErrorHandler)
+        this.websocketClient.addEventListener('message', this.onMessageHandler)
 
         return this.waitForOpenConnection()
     }
@@ -57,8 +72,8 @@ class BinanceWebsocketService {
         console.log(`Connection established for: ${BinanceWebsocketService.BINANCE_FEATURES_WS_STREAM_URL}`)
     }
 
-    protected onCloseHandler(code: number, reason: string): void {
-        console.log(`Connection closed, code: ${code}, reason: ${reason}`)
+    protected onCloseHandler(closeEvent: CloseEvent): void {
+        console.log(`Connection closed, code: ${closeEvent.code}, reason: ${closeEvent.reason}`)
     }
 
     protected onErrorHandler(error: ErrorEvent): void {

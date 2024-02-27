@@ -1,3 +1,4 @@
+import BinanceRestApiService from '../service/binanceRestApiService'
 import { RawBinanceStreamCandlestick } from '../types/binanceType'
 import { Candlestick } from '../types/candlestickType'
 
@@ -16,4 +17,24 @@ export const mapRawBinanceStreamCandlestickToCandlestick = (
         closeTime: rawCandlestickData.k.T,
         isClosed: rawCandlestickData.k.x,
     }
+}
+
+export const mapRawBinanceRestApiCandlestickToCandlestick = (
+    symbol: string,
+    timeframe: string,
+    klineArr: any[],
+): Candlestick => {
+    const currentTime = new Date().getTime()
+    return {
+        symbol,
+        timeframe,
+        exchange: BinanceRestApiService.BINANCE_EXCHANGE_NAME,
+        open: Number.parseFloat(klineArr[1]),
+        closed: Number.parseFloat(klineArr[4]),
+        high: Number.parseFloat(klineArr[2]),
+        low: Number.parseFloat(klineArr[3]),
+        openTime: klineArr[0],
+        closeTime: klineArr[6],
+        isClosed: klineArr[6] < currentTime,
+    } as Candlestick
 }
